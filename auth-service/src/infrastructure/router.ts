@@ -25,7 +25,12 @@ router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 router.use(helmet());
 router.use(cors({
-  origin: ["https://shine-uat.nseindia.com", "https://nse-dev.shinetrace.space", "http://localhost:3000", "http://localhost:3700"]
+  // Allowed origins come from CORS_ORIGINS (comma-separated) when set, falling
+  // back to the historical hardcoded list. Hardcoding meant every new
+  // environment needed a code change and a redeploy to be reachable at all,
+  // which is why the production domain was never in the list.
+  origin: (process.env.CORS_ORIGINS || "https://shine-uat.nseindia.com,https://nse-dev.shinetrace.space,http://localhost:3000,http://localhost:3700")
+    .split(",").map((o) => o.trim()).filter(Boolean)
 }));
 
 // Create a Registry which registers the metrics
