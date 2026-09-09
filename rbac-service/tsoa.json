@@ -1,0 +1,45 @@
+{
+  "swagger": {
+    "securityDefinitions": {
+      "jwt": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "basePath": "/rbac/api/v1",
+  "entryFile": "./src/infrastructure/server.ts",
+  "specVersion": 3,
+    "outputDirectory": "./api/dist",
+    "controllerPathGlobs": [
+      "src/interfaces/controllers/**/*Controller.ts"
+    ],
+    "specMerging": "recursive",
+    "spec": {
+      "servers": [
+        {
+          "url": "http://localhost:3002/api/v1"
+        },
+        {
+          "url": "https://goldtrace-api-dev.shinetrace.space:8443/rbac/api/v1"
+        },
+        {
+          "url": "https://nse-dev-api.shinetrace.space/rbac/api/v1"
+        }
+      ],
+      "specVersion": 3,
+      "outputDirectory": "./api/dist"
+    },
+    "schemes": [
+      "https"
+    ],
+  "host": "goldtrace-api-dev.shinetrace.space:8443",
+  "routes": {
+    "authenticationModule": "./src/application/security/authentication.ts",
+    "basePath": "/api/v1",
+    "entryFile": "./src/infrastructure/server.ts",
+    "routesDir": "./src/infrastructure/routes",
+    "middleware": "express"
+  }
+}

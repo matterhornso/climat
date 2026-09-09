@@ -1,0 +1,8 @@
+node_modules/
+.vscode/
+dist/
+*.log
+builds/
+cache/
+.scannerwork/
+logs/
