@@ -1,0 +1,8 @@
+{
+  "name": "climat-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Strips the leading service segment and forwards. No dependencies.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" }
+}

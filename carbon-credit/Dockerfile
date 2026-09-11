@@ -1,27 +1,21 @@
-FROM node:14-alpine
+# Node 20: the services' dependencies (eosjs, jsonwebtoken) break on newer
+# runtimes, and the previous node:14 base is years past end of life.
+FROM node:20-alpine
 
-RUN addgroup -S nupp && adduser -S -g nupp nupp
+# Build toolchain for any dependency that compiles natively; dumb-init so the
+# container forwards signals and reaps children properly.
+RUN apk add --no-cache dumb-init python3 make g++
 
-ENV HOME=/home/nupp
+WORKDIR /app
+COPY . .
 
-COPY package.json npm-shrinkwrap.json tsconfig.json copyStaticAssets.ts tsoa.json $HOME/app/
+# Compile at image build time. The previous setup ran the TypeScript build on
+# every container start, which made each restart minutes long.
+RUN npm install --unsafe-perm=true && npm run build
 
-COPY src/ $HOME/app/src
+# Evidence uploads land here until object storage replaces local disk. On a
+# container filesystem this does not survive a redeploy — see the README.
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 
-COPY env/ $HOME/app/env
-
-ADD https://github.com/Yelp/dumb-init/releases/download/v1.1.1/dumb-init_1.1.1_amd64 /usr/local/bin/dumb-init
-
-WORKDIR $HOME/app
-
-RUN chown -R nupp:nupp $HOME/* /usr/local/ && \
-  chmod +x /usr/local/bin/dumb-init && \
-  npm install --unsafe-perm=true && \
-  chown -R nupp:nupp $HOME/* && \
-  chown -R nupp:nupp /home/nupp/.config
-
-USER nupp
-
-EXPOSE 4001
-
-CMD ["dumb-init", "npm", "start"]
+USER node
+CMD ["dumb-init", "node", "dist/src/infrastructure/server.js"]
