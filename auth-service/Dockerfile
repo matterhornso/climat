@@ -15,7 +15,10 @@ RUN npm install --unsafe-perm=true && npm run build
 
 # Evidence uploads land here until object storage replaces local disk. On a
 # container filesystem this does not survive a redeploy — see the README.
-RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+# logs/ is created by the rotating file logger at startup, relative to the
+# working directory; without it owned by the runtime user the process dies on
+# boot with EACCES before it serves anything.
+RUN mkdir -p /app/uploads /app/logs && chown -R node:node /app/uploads /app/logs
 
 USER node
 CMD ["dumb-init", "node", "dist/src/infrastructure/server.js"]
