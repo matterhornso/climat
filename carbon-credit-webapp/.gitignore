@@ -25,3 +25,4 @@ yarn-error.log*
 # Runtime logs (winston)
 *.log
 logs/
+.vercel
