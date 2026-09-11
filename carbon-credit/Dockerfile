@@ -20,5 +20,8 @@ RUN npm install --unsafe-perm=true && npm run build
 # boot with EACCES before it serves anything.
 RUN mkdir -p /app/uploads /app/logs && chown -R node:node /app/uploads /app/logs
 
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 USER node
-CMD ["dumb-init", "node", "dist/src/infrastructure/server.js"]
+CMD ["dumb-init", "/app/docker-entrypoint.sh"]
