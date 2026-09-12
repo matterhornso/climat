@@ -12,5 +12,8 @@ node dist/src/infrastructure/database/seed/tenant.seed.js || echo "[entrypoint] 
 echo "[entrypoint] seeding methodologies"
 node dist/src/infrastructure/database/seed/methodology.seed.js || echo "[entrypoint] methodology seed failed, continuing"
 
+echo "[entrypoint] seeding worked example"
+node dist/src/infrastructure/database/seed/worked_example.seed.js || echo "[entrypoint] worked example seed failed, continuing"
+
 echo "[entrypoint] starting carbon-credit"
 exec node dist/src/infrastructure/server.js
