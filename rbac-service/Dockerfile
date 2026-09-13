@@ -2,8 +2,6 @@
 # runtimes, and the previous node:14 base is years past end of life.
 FROM node:20-alpine
 
-# Build toolchain for any dependency that compiles natively; dumb-init so the
-# container forwards signals and reaps children properly.
 RUN apk add --no-cache dumb-init python3 make g++
 
 WORKDIR /app
@@ -13,11 +11,9 @@ COPY . .
 # every container start, which made each restart minutes long.
 RUN npm install --unsafe-perm=true && npm run build
 
-# Evidence uploads land here until object storage replaces local disk. On a
-# container filesystem this does not survive a redeploy — see the README.
-# logs/ is created by the rotating file logger at startup, relative to the
-# working directory; without it owned by the runtime user the process dies on
-# boot with EACCES before it serves anything.
+# uploads/ holds evidence until object storage replaces local disk; logs/ is
+# created by the rotating file logger at startup. Without both owned by the
+# runtime user the process dies on boot with EACCES.
 RUN mkdir -p /app/uploads /app/logs && chown -R node:node /app/uploads /app/logs
 
 USER node
