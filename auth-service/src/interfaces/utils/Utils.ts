@@ -5,15 +5,19 @@ export class Utils {
   constructor() {
   }
 
+  // Idle timeout, refreshed on every verified request — so this is time since
+  // the last call, not time since login. The 900s default is what was
+  // hardcoded here; SESSION_IDLE_TIMEOUT_SECONDS lets an environment choose a
+  // longer window without a code change, which is what a demo or a long review
+  // session needs. Deployments handling real accounts should leave it alone.
   verifyJwtBasedOnTime(date: any) {
-    return new Promise<any>(async (resolve, reject) => {
-      var now = moment(new Date()); //todays date
-      var end = moment(new Date(date)); // another date
-      var duration = moment.duration(now.diff(end));
-      var second = duration.asSeconds()
-      console.log('token time', second)
-      let flag = second <= 900 ? true : false;
-      resolve(flag)
+    return new Promise<any>(async (resolve) => {
+      const configured = Number(process.env['SESSION_IDLE_TIMEOUT_SECONDS']);
+      const timeoutSeconds = Number.isFinite(configured) && configured > 0 ? configured : 900;
+      const now = moment(new Date());
+      const end = moment(new Date(date));
+      const second = moment.duration(now.diff(end)).asSeconds();
+      resolve(second <= timeoutSeconds);
     })
   }
   verifyJwt(token: string) {
