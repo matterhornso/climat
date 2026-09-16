@@ -51,11 +51,21 @@ export class LoginController extends Controller {
       const captchaUseCase = new CaptchaUseCase(this.captchaRepository);
       let captchaData = await captchaUseCase.verify(request.id);
       if (captchaData) {
-        if (captchaData.captcha === request.captcha) {
+        if (captchaData.captcha !== request.captcha) {
+          // Previously this fell through both branches and returned nothing at
+          // all, so a mistyped captcha produced an empty response and a generic
+          // failure in the UI with no indication of what was actually wrong.
+          console.log('[login] rejected: captcha mismatch');
+          return new Response().sendResponseFailure("captcha incorrect", false);
+        }
+        {
           captchaUseCase.destroyCaptcha(request.id)
           const userservice = new UserService();
           let user = await userservice.getUserByEmailPassword(request.email, request.password)
-          if (!user.success) return new Response().sendResponseFailure("username / password incorrect", false);
+          if (!user.success) {
+            console.log('[login] rejected: user lookup returned', JSON.stringify(user?.data || user?.error || 'no detail'));
+            return new Response().sendResponseFailure("username / password incorrect", false);
+          }
           if (user && user.data) user = user.data;
           let dept_res = await userservice.getOrgByDepartmentId(user.departmentId);
           let type = dept_res.data.type
@@ -70,6 +80,16 @@ export class LoginController extends Controller {
           let otp_generate_time = new Date();
           let saveOtp = await token.saveOtp({ loginId: jwt.loginId, otp: otp, email: request.email, otp_generate_time: otp_generate_time })
           if (saveOtp) {
+            // Delivery depends on notification-service. Where that is not
+            // deployed there is otherwise no way to obtain the code, so an
+            // environment may opt into writing it to the service log. Codes
+            // stay random and single-use; the only thing this weakens is that
+            // anyone who can read the deployment's logs can read the code.
+            // Never enable it where real accounts exist.
+            if (process.env['LOG_OTP_TO_CONSOLE'] === 'true') {
+              console.log(`[login] OTP for ${request.email}: ${otp} (LOG_OTP_TO_CONSOLE is enabled)`);
+            }
+            console.log('[login] accepted, otp issued for', request.email);
             new Util2FA().sendMail(otp, receipt, jwt.jwtToken)
             new Util2FA().sendOtp({ otp, receipt })
             return new Response().sendResponseSuccess({ uuid: jwt.uuid, id: jwt.loginId, remaining: 90, attempt_remaining: 3, now: otp_generate_time }, true);
@@ -78,10 +98,12 @@ export class LoginController extends Controller {
           }
         }
       } else {
-        return new Response().sendResponseFailure("not valid", false);
+        console.log('[login] rejected: captcha id not found or expired');
+        return new Response().sendResponseFailure("captcha expired — refresh it and try again", false);
       }
 
     } catch (Error: any) {
+      console.log('[login] error:', Error?.message);
       return new Response().sendResponseFailure(Error.message, false);
     }
   }
